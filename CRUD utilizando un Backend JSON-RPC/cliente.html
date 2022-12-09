@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Pobresoft JSON-RPC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Directorio telefonico JSON-RPC</h1>
+ 
+    <form id="form">
+      <div class="mb-3">
+        <label for="CapturadeNombre" class="form-label">Nombre</label>
+        <input type="text" class="form-control" id="nombre" placeholder="Teclea aquí el nombre de la persona">
+      </div>
+      <div class="mb-3">
+        <label for="CaoturadelaDireccion" class="form-label">Dirección</label>
+        <textarea class="form-control" id="direccion" rows="3"></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="CaoturadelaTelefono" class="form-label">Telefono</label>
+        <input type="tel" class="form-control" id="telefono" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" ></input>
+      </div>
+    </form>
+    <button class="btn btn-warning" onclick="agregar()">Guardar</button>
+    <div id="lista">
+    </div>
+   
+
+<!-- Modal -->
+<div class="modal fade" id="eliminarModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Editar datos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+       
+        <form id="form">
+          <div class="mb-3">
+            <label for="CapturadeNombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="enombre" placeholder="Teclea aquí el nombre de la persona">
+          </div>
+          <div class="mb-3">
+            <label for="CaoturadelaDireccion" class="form-label">Dirección</label>
+            <textarea class="form-control" id="edireccion" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="CaoturadelaTelefono" class="form-label">Telefono</label>
+            <input type="tel" class="form-control" id="etelefono" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" ></input>
+          </div>
+        </form>
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="actualizar()">Guardar los cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div>
+</body>
+    <script>
+
+var form = document.getElementById('form');
+  var nombre = document.getElementById('nombre');
+  var direcion = document.getElementById('direccion');
+  var telefono = document.getElementById('telefono');
+  var myModal = new bootstrap.Modal(document.getElementById("eliminarModal"), {});
+  var listadepersonas=[];
+  var lista=document.getElementById('lista');
+  var nor={};
+
+  function agregar() {
+    llamadaRPC({
+    jsonrpc: "2.0",
+    method: "agregarPersona",
+    params: {"nombre":nombre.value,"direccion":direcion.value,"telefono":telefono.value}, id: 1
+        })
+.then((data)=>{
+
+    nombre.value="";
+    direcion.value="";
+    telefono.value="";
+  mostrarpersonas();
+});    
+}
+
+function Eliminar(no){
+ 
+    llamadaRPC({
+    jsonrpc: "2.0",
+    method: "eliminarPersona",
+    params: {"id":no}, id: 1
+        })
+.then((data)=>{
+    mostrarpersonas();
+  })
+
+  }
+
+  function actualizar(){
+    llamadaRPC({
+    jsonrpc: "2.0",
+    method: "actualizarPersona",
+    params: {"nombre":enombre.value,
+             "direccion":edireccion.value,
+             "telefono":etelefono.value,
+             "id":nor.id}, id: 1
+        })
+.then((data)=>{
+    enombre.value="";
+    edireccion.value="";
+    etelefono.value="";
+    myModal.hide();
+    mostrarpersonas();
+  })
+
+}
+
+  function Editar(idt)
+  {
+    const result = listadepersonas.find(({ id }) => id == idt);
+    nor=result;
+    var nombre=document.getElementById('enombre');
+    var direccion=document.getElementById('edireccion');
+    var telefono=document.getElementById('etelefono');
+
+    nombre.value=nor.nombre;
+    direccion.value=nor.direccion;
+    telefono.value=nor.telefono;
+    myModal.show();
+
+}
+
+  function mostrarpersonas()
+  {
+   
+    llamadaRPC({
+    jsonrpc: "2.0",
+    method: "obtenerLista",
+    params: {}, id: 1
+        })
+.then((data)=>{
+    //console.log(data);
+    listadepersonas=data.result;
+    let html='<div class="row">';
+    listadepersonas.forEach((element,index) => {
+      let card=`      
+  <div class="col-md-4 p-2">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">${element.nombre}</h5>
+        <pre class="card-text">${element.direccion}</pre>
+        <p class="card-text">${element.telefono}</p>
+        <button class="btn btn-danger" onclick="Eliminar(${element.id})">Eliminar</button>
+        <button class="btn btn-success" onclick="Editar(${element.id})">Editar</button>
+      </div>
+    </div>
+  </div>
+      `;
+      html+=card;
+    });
+    html+='</div>';
+    lista.innerHTML=html;    
+});
+//console.log(listadepersonas);
+   
+  }
+
+  mostrarpersonas();
+
+
+// datos mandados con la solicutud POST - solo para demstración
+let _datos = {
+    jsonrpc: "2.0",
+    method: "sumar",
+    params: { "valor1": 5,"valor2":30 }, id: 1
+        }
+
+
+
+async function llamadaRPC(datos) {
+  const rawResponse = await fetch('http://localhost:8080/json-rpc', {
+    method: 'POST',    
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(datos)
+  });
+//  const content = await r
+return rawResponse.json();
+  //console.log(content);
+}
+
+    </script>
+</body>
+</html>

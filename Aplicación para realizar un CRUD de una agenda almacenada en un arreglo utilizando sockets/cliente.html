@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Pobresoft</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1>Directorio telefonico</h1>
+ 
+    <form id="form">
+      <div class="mb-3">
+        <label for="CapturadeNombre" class="form-label">Nombre</label>
+        <input type="text" class="form-control" id="nombre" placeholder="Teclea aquí el nombre de la persona">
+      </div>
+      <div class="mb-3">
+        <label for="CaoturadelaDireccion" class="form-label">Dirección</label>
+        <textarea class="form-control" id="direccion" rows="3"></textarea>
+      </div>
+      <div class="mb-3">
+        <label for="CaoturadelaTelefono" class="form-label">Telefono</label>
+        <input type="tel" class="form-control" id="telefono" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" ></input>
+      </div>
+    </form>
+    <button class="btn btn-warning" onclick="agregar()">Guardar</button>
+    <div id="lista">
+    </div>
+   
+
+<!-- Modal -->
+<div class="modal fade" id="eliminarModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Editar datos</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+       
+        <form id="form">
+          <div class="mb-3">
+            <label for="CapturadeNombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="enombre" placeholder="Teclea aquí el nombre de la persona">
+          </div>
+          <div class="mb-3">
+            <label for="CaoturadelaDireccion" class="form-label">Dirección</label>
+            <textarea class="form-control" id="edireccion" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="CaoturadelaTelefono" class="form-label">Telefono</label>
+            <input type="tel" class="form-control" id="etelefono" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" ></input>
+          </div>
+        </form>
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="actualizar()">Guardar los cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io();
+  var messages = document.getElementById('messages');
+  var form = document.getElementById('form');
+  var nombre = document.getElementById('nombre');
+  var direcion = document.getElementById('direccion');
+  var telefono = document.getElementById('telefono');
+  var myModal = new bootstrap.Modal(document.getElementById("eliminarModal"), {});
+  var listadepersonas=[];
+  var lista=document.getElementById('lista');
+  var nor=0;
+
+  function agregar() {
+    socket.emit('agregar', nombre.value,direccion.value,telefono.value);
+    nombre.value="";
+    direcion.value="";
+    telefono.value="";
+  }
+
+  function Eliminar(no){
+    socket.emit('eliminar',no);
+  }
+
+  function actualizar(){
+ 
+  socket.emit('actualizar', enombre.value,edireccion.value,etelefono.value,nor);
+    enombre.value="";
+    edireccion.value="";
+    etelefono.value="";
+    myModal.hide();
+  }
+  function Editar(no)
+  {
+    nor=no;
+    var nombre=document.getElementById('enombre');
+    var direccion=document.getElementById('edireccion');
+    var telefono=document.getElementById('etelefono');
+    nombre.value=listadepersonas[no].nombre;
+    direccion.value=listadepersonas[no].direccion;
+    telefono.value=listadepersonas[no].telefono;
+
+    myModal.show();
+
+}
+
+  function mostrarpersonas()
+  {
+    let html='<div class="row">';
+    listadepersonas.forEach((element,index) => {
+      let card=`      
+  <div class="col-md-4 p-2">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">${element.nombre}</h5>
+        <pre class="card-text">${element.direccion}</pre>
+        <p class="card-text">${element.telefono}</p>
+        <button class="btn btn-danger" onclick="Eliminar(${index})">Eliminar</button>
+        <button class="btn btn-success" onclick="Editar(${index})">Editar</button>
+      </div>
+    </div>
+  </div>
+      `;
+      html+=card;
+    });
+    html+='</div>';
+    lista.innerHTML=html;
+  }
+ 
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (input.value) {
+        alert("Enviar");
+      socket.emit('agregar', "Juan Perez","Av. Universidad 333","31261000");
+      input.value = '';
+    }
+  });
+
+  socket.on("data", function(msg) {
+    var item = document.createElement('li');
+    item.textContent = msg;
+    messages.appendChild(item);
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+
+  socket.on('actualizalista', function(lista) {
+   listadepersonas=lista;
+   mostrarpersonas();
+  });
+
+    socket.on('mensajes', function(msg) {
+    var item = document.createElement('li');
+    item.textContent = msg;
+    messages.appendChild(item);
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+
+</script>
+</html>
